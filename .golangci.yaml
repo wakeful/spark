@@ -1,0 +1,43 @@
+version: "2"
+linters:
+  default: all
+  settings:
+    cyclop:
+      max-complexity: 11
+    depguard:
+      rules:
+        main:
+          allow:
+            - $gostd
+            - github.com/aws/aws-sdk-go-v2/aws
+            - github.com/aws/aws-sdk-go-v2/config
+            - github.com/aws/aws-sdk-go-v2/service/ec2
+            - github.com/aws/aws-sdk-go-v2/service/ec2/types
+            - github.com/aws/aws-sdk-go-v2/service/rds
+            - github.com/aws/aws-sdk-go-v2/service/ssm
+            - github.com/aws/aws-sdk-go-v2/service/sts
+            - golang.org/x/sync/errgroup
+  exclusions:
+    generated: disable
+    rules:
+      - path: main.go
+        linters:
+          - funlen
+          - lll
+      - path: _string.go
+        linters:
+          - gochecknoglobals
+      - path: _test.go
+        linters:
+          - dupl
+          - err113
+          - exhaustruct
+          - funlen
+          - varnamelen
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+    - golines
