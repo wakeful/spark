@@ -1,0 +1,8 @@
+// Package gen Code generated. DO NOT EDIT.
+package main
+
+var supportedRegions = []string{
+	{{- range .Regions }}
+	{{ printf "%q" . }},
+	{{- end }}
+}

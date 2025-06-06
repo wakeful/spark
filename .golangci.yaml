@@ -1,6 +1,9 @@
 version: "2"
 linters:
   default: all
+  disable:
+    - dupl
+    - funlen
   settings:
     cyclop:
       max-complexity: 11
@@ -20,11 +23,15 @@ linters:
   exclusions:
     generated: disable
     rules:
+      - path: gen/
+        linters:
+          - exhaustruct
+          - revive
       - path: main.go
         linters:
           - funlen
           - lll
-      - path: _string.go
+      - path: (gen_.*|_string).go
         linters:
           - gochecknoglobals
       - path: _test.go

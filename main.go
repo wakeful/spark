@@ -16,12 +16,13 @@ var version = "dev"
 
 func main() {
 	var (
-		target       = flag.String("target", "self", "target AWS account ID")
-		listScanners = flag.Bool("list-scanners", false, "list available resource types")
-		showVersion  = flag.Bool("version", false, "show version")
-		verbose      = flag.Bool("verbose", false, "verbose log output")
-		regionVars   StringSlice
-		scannersVars StringSlice
+		target         = flag.String("target", "self", "target AWS account ID")
+		listScanners   = flag.Bool("list-scanners", false, "list available resource types")
+		showVersion    = flag.Bool("version", false, "show version")
+		verbose        = flag.Bool("verbose", false, "verbose log output")
+		scanAllRegions = flag.Bool("region-all", false, "scan all regions")
+		regionVars     StringSlice
+		scannersVars   StringSlice
 	)
 
 	flag.Var(
@@ -56,6 +57,12 @@ func main() {
 		}
 
 		return
+	}
+
+	if *scanAllRegions {
+		slog.Debug("scan all regions")
+
+		regionVars = supportedRegions
 	}
 
 	ctx := context.TODO()
