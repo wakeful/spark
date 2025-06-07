@@ -53,7 +53,11 @@ func newApp(ctx context.Context, check []runnerType, regions []string) (*App, er
 			case ebsSnapshot:
 				runners = append(runners, newEBSSnapshotRunner(cfg))
 			case rdsSnapshot:
-				runners = append(runners, newRDSSnapshotRunner(cfg))
+				runners = append(
+					runners,
+					newRDSSnapshotRunner(cfg),
+					newRDSClusterSnapshotRunner(cfg),
+				)
 			case ssmDocument:
 				runners = append(runners, newSSMDocumentScan(cfg))
 			}

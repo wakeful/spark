@@ -15,24 +15,24 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/rds/types"
 )
 
-type mockRDSSnapshotClient struct {
-	mockDBSnapshot             []types.DBSnapshot
-	mockDescribeDBSnapshotsErr error
+type mockRDSClusterSnapshotClient struct {
+	mockDBClusterSnapshot    []types.DBClusterSnapshot
+	mockDBClusterSnapshotErr error
 }
 
-func (m *mockRDSSnapshotClient) DescribeDBSnapshots(
+func (m *mockRDSClusterSnapshotClient) DescribeDBClusterSnapshots(
 	_ context.Context,
-	_ *rds.DescribeDBSnapshotsInput,
+	_ *rds.DescribeDBClusterSnapshotsInput,
 	_ ...func(*rds.Options),
-) (*rds.DescribeDBSnapshotsOutput, error) {
-	return &rds.DescribeDBSnapshotsOutput{
-		DBSnapshots: m.mockDBSnapshot,
-	}, m.mockDescribeDBSnapshotsErr
+) (*rds.DescribeDBClusterSnapshotsOutput, error) {
+	return &rds.DescribeDBClusterSnapshotsOutput{
+		DBClusterSnapshots: m.mockDBClusterSnapshot,
+	}, m.mockDBClusterSnapshotErr
 }
 
-var _ rdsSnapshotClient = (*mockRDSSnapshotClient)(nil)
+var _ rdsClusterSnapshotClient = (*mockRDSClusterSnapshotClient)(nil)
 
-func Test_rdsSnapshotScan_scan(t *testing.T) {
+func Test_rdsClusterSnapshotScan_scan(t *testing.T) {
 	t.Parallel()
 	withTimeout, _ := context.WithTimeout(t.Context(), -time.Minute) //nolint:govet
 	now := time.Now()
@@ -40,7 +40,7 @@ func Test_rdsSnapshotScan_scan(t *testing.T) {
 	tests := []struct {
 		name    string
 		ctx     context.Context //nolint:containedctx
-		client  rdsSnapshotClient
+		client  rdsClusterSnapshotClient
 		region  string
 		target  string
 		want    []Result
@@ -49,9 +49,9 @@ func Test_rdsSnapshotScan_scan(t *testing.T) {
 		{
 			name: "should fail when ctx is cancelled",
 			ctx:  withTimeout,
-			client: &mockRDSSnapshotClient{
-				mockDBSnapshot:             nil,
-				mockDescribeDBSnapshotsErr: nil,
+			client: &mockRDSClusterSnapshotClient{
+				mockDBClusterSnapshot:    nil,
+				mockDBClusterSnapshotErr: nil,
 			},
 			region:  "eu-west-1",
 			target:  "self",
@@ -61,9 +61,9 @@ func Test_rdsSnapshotScan_scan(t *testing.T) {
 		{
 			name: "should fail when target is empty",
 			ctx:  t.Context(),
-			client: &mockRDSSnapshotClient{
-				mockDBSnapshot:             nil,
-				mockDescribeDBSnapshotsErr: nil,
+			client: &mockRDSClusterSnapshotClient{
+				mockDBClusterSnapshot:    nil,
+				mockDBClusterSnapshotErr: nil,
 			},
 			region:  "eu-west-1",
 			target:  "",
@@ -73,9 +73,9 @@ func Test_rdsSnapshotScan_scan(t *testing.T) {
 		{
 			name: "should fail when instance api returns error",
 			ctx:  t.Context(),
-			client: &mockRDSSnapshotClient{
-				mockDBSnapshot:             nil,
-				mockDescribeDBSnapshotsErr: errors.New("some error"),
+			client: &mockRDSClusterSnapshotClient{
+				mockDBClusterSnapshot:    nil,
+				mockDBClusterSnapshotErr: errors.New("some error"),
 			},
 			region:  "eu-west-1",
 			target:  "self",
@@ -85,9 +85,9 @@ func Test_rdsSnapshotScan_scan(t *testing.T) {
 		{
 			name: "should succeed with zero snapshots when no snapshots found",
 			ctx:  t.Context(),
-			client: &mockRDSSnapshotClient{
-				mockDBSnapshot:             nil,
-				mockDescribeDBSnapshotsErr: nil,
+			client: &mockRDSClusterSnapshotClient{
+				mockDBClusterSnapshot:    nil,
+				mockDBClusterSnapshotErr: nil,
 			},
 			region:  "eu-west-1",
 			target:  "self",
@@ -97,18 +97,18 @@ func Test_rdsSnapshotScan_scan(t *testing.T) {
 		{
 			name: "should succeed with one instance snapshot",
 			ctx:  t.Context(),
-			client: &mockRDSSnapshotClient{
-				mockDBSnapshot: []types.DBSnapshot{
+			client: &mockRDSClusterSnapshotClient{
+				mockDBClusterSnapshot: []types.DBClusterSnapshot{
 					{
-						SnapshotCreateTime:   &now,
-						DBSnapshotIdentifier: aws.String("test-self-id"),
+						SnapshotCreateTime:          &now,
+						DBClusterSnapshotIdentifier: aws.String("test-self-id"),
 					},
 					{
-						SnapshotCreateTime:   &now,
-						DBSnapshotIdentifier: aws.String("test-skip-id"),
+						SnapshotCreateTime:          &now,
+						DBClusterSnapshotIdentifier: aws.String("test-skip-id"),
 					},
 				},
-				mockDescribeDBSnapshotsErr: nil,
+				mockDBClusterSnapshotErr: nil,
 			},
 			region: "eu-west-1",
 			target: "self",
@@ -127,7 +127,7 @@ func Test_rdsSnapshotScan_scan(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			r := &rdsSnapshotScan{
+			r := &rdsClusterSnapshotScan{
 				baseRunner: baseRunner{
 					region:     tt.region,
 					runnerType: rdsSnapshot,
