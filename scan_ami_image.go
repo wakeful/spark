@@ -22,20 +22,19 @@ type amiClient interface {
 }
 
 type amiImageScan struct {
+	baseRunner
 	client amiClient
-	region string
-}
-
-func (s *amiImageScan) runType() runnerType {
-	return amiImage
 }
 
 func newAMIImageScan(cfg aws.Config) *amiImageScan {
 	client := ec2.NewFromConfig(cfg)
 
 	return &amiImageScan{
+		baseRunner: baseRunner{
+			region:     cfg.Region,
+			runnerType: amiImage,
+		},
 		client: client,
-		region: cfg.Region,
 	}
 }
 

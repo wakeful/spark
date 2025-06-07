@@ -186,8 +186,11 @@ func Test_rdsSnapshotScan_scan(t *testing.T) {
 			t.Parallel()
 
 			r := &rdsSnapshotScan{
+				baseRunner: baseRunner{
+					region:     tt.region,
+					runnerType: rdsSnapshot,
+				},
 				client: tt.client,
-				region: tt.region,
 			}
 
 			got, err := r.scan(tt.ctx, tt.target)
@@ -237,8 +240,11 @@ func Test_rdsSnapshotScan_scanClusterSnapShoots(t *testing.T) {
 			t.Parallel()
 
 			r := &rdsSnapshotScan{
+				baseRunner: baseRunner{
+					region:     tt.region,
+					runnerType: rdsSnapshot,
+				},
 				client: tt.client,
-				region: tt.region,
 			}
 
 			got, err := r.scanClusterSnapshots(tt.ctx, tt.target)

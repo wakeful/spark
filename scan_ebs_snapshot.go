@@ -23,20 +23,19 @@ type ebsSnapshotClient interface {
 }
 
 type ebsSnapshotScan struct {
+	baseRunner
 	client ebsSnapshotClient
-	region string
-}
-
-func (s *ebsSnapshotScan) runType() runnerType {
-	return ebsSnapshot
 }
 
 func newEBSSnapshotRunner(cfg aws.Config) *ebsSnapshotScan {
 	client := ec2.NewFromConfig(cfg)
 
 	return &ebsSnapshotScan{
+		baseRunner: baseRunner{
+			region:     cfg.Region,
+			runnerType: ebsSnapshot,
+		},
 		client: client,
-		region: cfg.Region,
 	}
 }
 

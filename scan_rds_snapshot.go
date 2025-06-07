@@ -26,20 +26,19 @@ type rdsSnapshotClient interface {
 }
 
 type rdsSnapshotScan struct {
+	baseRunner
 	client rdsSnapshotClient
-	region string
-}
-
-func (r *rdsSnapshotScan) runType() runnerType {
-	return rdsSnapshot
 }
 
 func newRDSSnapshotRunner(cfg aws.Config) *rdsSnapshotScan {
 	client := rds.NewFromConfig(cfg)
 
 	return &rdsSnapshotScan{
+		baseRunner: baseRunner{
+			region:     cfg.Region,
+			runnerType: rdsSnapshot,
+		},
 		client: client,
-		region: cfg.Region,
 	}
 }
 

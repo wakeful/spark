@@ -32,3 +32,12 @@ type runner interface {
 	scan(ctx context.Context, target string) ([]Result, error)
 	runType() runnerType
 }
+
+type baseRunner struct {
+	region     string
+	runnerType runnerType
+}
+
+func (b baseRunner) runType() runnerType {
+	return b.runnerType
+}

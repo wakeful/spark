@@ -24,20 +24,19 @@ type ssmDocumentClient interface {
 }
 
 type ssmDocumentScan struct {
+	baseRunner
 	client ssmDocumentClient
-	region string
-}
-
-func (s ssmDocumentScan) runType() runnerType {
-	return ssmDocument
 }
 
 func newSSMDocumentScan(cfg aws.Config) *ssmDocumentScan {
 	client := ssm.NewFromConfig(cfg)
 
 	return &ssmDocumentScan{
+		baseRunner: baseRunner{
+			region:     cfg.Region,
+			runnerType: ssmDocument,
+		},
 		client: client,
-		region: cfg.Region,
 	}
 }
 
