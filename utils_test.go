@@ -5,10 +5,12 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"log/slog"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 )
@@ -185,5 +187,27 @@ func Test_getRunners(t *testing.T) {
 				t.Errorf("getRunners() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func Test_spinner(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	var buf bytes.Buffer
+
+	mockTicker := make(chan time.Time)
+	go spinner(ctx, &buf, mockTicker)
+	mockTicker <- time.Now()
+	mockTicker <- time.Now()
+	mockTicker <- time.Now()
+
+	cancel()
+
+	want := "\r\u001B[Kscanning... |\r\u001B[Kscanning... /\r\u001B[Kscanning... -"
+	if got := buf.String(); !reflect.DeepEqual(got, want) {
+		t.Errorf("getRunners() = %v, want %v", got, want)
 	}
 }

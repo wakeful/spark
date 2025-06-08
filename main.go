@@ -10,6 +10,7 @@ import (
 	"flag"
 	"log/slog"
 	"os"
+	"time"
 )
 
 var version = "dev"
@@ -79,7 +80,13 @@ func main() {
 		scannersVars = types
 	}
 
+	const tickerInterval = 100
+	ticker := time.NewTicker(tickerInterval * time.Millisecond)
+
 	ctx := context.TODO()
+	if !*verbose {
+		go spinner(ctx, os.Stderr, ticker.C)
+	}
 
 	app, err := newApp(
 		ctx,

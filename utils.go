@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"log/slog"
 	"sort"
 	"strings"
+	"time"
 )
 
 var (
@@ -97,4 +99,24 @@ func uniqRegions(input []string) []string {
 	sort.Strings(output)
 
 	return output
+}
+
+func spinner(ctx context.Context, writer io.Writer, ticker <-chan time.Time) {
+	spinChars := []rune{
+		'|',
+		'/',
+		'-',
+		'\\',
+	}
+
+	for position := 0; ; position = (position + 1) % len(spinChars) {
+		select {
+		case <-ctx.Done():
+			_, _ = fmt.Fprintln(writer, "\r\033[K")
+
+			return
+		case <-ticker:
+			_, _ = fmt.Fprintf(writer, "\r\033[K%s %c", "scanning...", spinChars[position])
+		}
+	}
 }
