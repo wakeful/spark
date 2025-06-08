@@ -21,6 +21,7 @@ func main() {
 		showVersion    = flag.Bool("version", false, "show version")
 		verbose        = flag.Bool("verbose", false, "verbose log output")
 		scanAllRegions = flag.Bool("region-all", false, "scan all regions")
+		scannersAll    = flag.Bool("scan-all", false, "scan all resource types")
 		regionVars     StringSlice
 		scannersVars   StringSlice
 	)
@@ -49,11 +50,18 @@ func main() {
 		return
 	}
 
+	types := []string{
+		amiImage.String(),
+		ebsSnapshot.String(),
+		rdsSnapshot.String(),
+		ssmDocument.String(),
+	}
+
 	if *listScanners {
 		slog.Info("available resource types")
 
-		for _, rType := range []runnerType{amiImage, ebsSnapshot, rdsSnapshot, ssmDocument} {
-			_, _ = os.Stdout.Write([]byte(rType.String() + "\n"))
+		for _, rType := range types {
+			_, _ = os.Stdout.Write([]byte(rType + "\n"))
 		}
 
 		return
@@ -63,6 +71,12 @@ func main() {
 		slog.Debug("scan all regions")
 
 		regionVars = supportedRegions
+	}
+
+	if *scannersAll {
+		slog.Debug("scan all resource types")
+
+		scannersVars = types
 	}
 
 	ctx := context.TODO()

@@ -10,17 +10,21 @@
 $ spark -h
 Usage spark:
   -list-scanners
-        list available resource types
+    list available resource types
   -region value
-        AWS region to scan (can be specified multiple times)
+    AWS region to scan (can be specified multiple times)
+  -region-all
+    scan all regions
   -scan value
-        AWS resource type to scan (can be specified multiple times)
+    AWS resource type to scan (can be specified multiple times)
+  -scan-all
+    scan all resource types
   -target string
-        target AWS account ID (default "self")
+    target AWS account ID (default "self")
   -verbose
-        verbose log output
+    verbose log output
   -version
-        show version
+    show version
 
 
 $ spark -list-scanners
