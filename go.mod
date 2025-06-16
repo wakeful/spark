@@ -6,7 +6,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.36.4
 	github.com/aws/aws-sdk-go-v2/config v1.29.16
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.225.1
-	github.com/aws/aws-sdk-go-v2/service/rds v1.97.1
+	github.com/aws/aws-sdk-go-v2/service/rds v1.97.2
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.59.2
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.21
 	golang.org/x/sync v0.15.0
