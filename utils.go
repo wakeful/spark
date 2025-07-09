@@ -18,9 +18,12 @@ import (
 var (
 	errEmptyAccountID = errors.New("failed to get caller identity, empty account ID")
 	errCtxCancelled   = errors.New("scan was cancelled")
-	errEmptyCheck     = errors.New("no resource types specified")
-	errEmptyRegion    = errors.New("no AWS regions specified")
-	errEmptyTarget    = errors.New("empty target AWS account ID")
+	errEmptyCheck     = errors.New(
+		"no resource types specified, use -list-scanners to view all scanners," +
+			" pass -scan scannerType or -scan-all to scan all supported resource types",
+	)
+	errEmptyRegion = errors.New("no AWS regions specified, use -region regionName or -region-all")
+	errEmptyTarget = errors.New("empty target AWS account ID")
 )
 
 // getLogger returns a slog.Logger configured with the given output and log level.

@@ -3,10 +3,7 @@ linters:
   default: all
   disable:
     - dupl
-    - funlen
   settings:
-    cyclop:
-      max-complexity: 11
     depguard:
       rules:
         main:
@@ -26,11 +23,9 @@ linters:
       - path: gen/
         linters:
           - exhaustruct
-          - revive
       - path: main.go
         linters:
           - funlen
-          - lll
       - path: (gen_.*|_string).go
         linters:
           - gochecknoglobals

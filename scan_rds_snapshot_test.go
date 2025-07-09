@@ -59,18 +59,6 @@ func Test_rdsSnapshotScan_scan(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "should fail when target is empty",
-			ctx:  t.Context(),
-			client: &mockRDSSnapshotClient{
-				mockDBSnapshot:             nil,
-				mockDescribeDBSnapshotsErr: nil,
-			},
-			region:  "eu-west-1",
-			target:  "",
-			want:    nil,
-			wantErr: true,
-		},
-		{
 			name: "should fail when instance api returns error",
 			ctx:  t.Context(),
 			client: &mockRDSSnapshotClient{

@@ -6,7 +6,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -40,16 +39,6 @@ func newEBSSnapshotRunner(cfg aws.Config) *ebsSnapshotScan {
 }
 
 func (s *ebsSnapshotScan) scan(ctx context.Context, target string) ([]Result, error) {
-	if target == "" {
-		return nil, fmt.Errorf("%w: target account ID is required", errEmptyTarget)
-	}
-
-	slog.Debug(
-		"starting EBS snapshot scan",
-		slog.String("region", s.region),
-		slog.String("target", target),
-	)
-
 	var output []Result
 
 	paginator := ec2.NewDescribeSnapshotsPaginator(s.client, &ec2.DescribeSnapshotsInput{
@@ -80,12 +69,6 @@ func (s *ebsSnapshotScan) scan(ctx context.Context, target string) ([]Result, er
 			})
 		}
 	}
-
-	slog.Debug("finished EBS snapshot scan",
-		slog.Int("count", len(output)),
-		slog.String("region", s.region),
-		slog.String("target", target),
-	)
 
 	return output, nil
 }

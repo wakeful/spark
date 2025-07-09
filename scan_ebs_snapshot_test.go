@@ -56,19 +56,6 @@ func Test_ebsSnapshotScan_scan(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
-
-		{
-			name: "should fail when target is empty",
-			ctx:  t.Context(),
-			client: &mockEBSSnapshotClient{
-				mockSnapshot:    nil,
-				mockSnapshotErr: nil,
-			},
-			region:  "eu-west-1",
-			target:  "",
-			want:    nil,
-			wantErr: true,
-		},
 		{
 			name: "should fail when api returns error",
 			ctx:  t.Context(),

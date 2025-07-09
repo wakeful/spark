@@ -151,7 +151,7 @@ func TestApp_Run(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "error durning the scan",
+			name:    "error during the scan",
 			ctx:     t.Context(),
 			runners: mockRunners,
 			target:  "",

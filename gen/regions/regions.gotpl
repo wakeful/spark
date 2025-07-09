@@ -1,4 +1,4 @@
-// Package gen Code generated. DO NOT EDIT.
+// Package main Code generated. DO NOT EDIT.
 package main
 
 var supportedRegions = []string{

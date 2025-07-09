@@ -41,16 +41,6 @@ func newSSMDocumentScan(cfg aws.Config) *ssmDocumentScan {
 }
 
 func (s ssmDocumentScan) scan(ctx context.Context, target string) ([]Result, error) {
-	if target == "" {
-		return nil, fmt.Errorf("%w: target account ID is required", errEmptyTarget)
-	}
-
-	slog.Debug(
-		"starting SSM Document scan",
-		slog.String("region", s.region),
-		slog.String("target", target),
-	)
-
 	var output []Result
 
 	paginator := ssm.NewListDocumentsPaginator(s.client, &ssm.ListDocumentsInput{
@@ -93,12 +83,6 @@ func (s ssmDocumentScan) scan(ctx context.Context, target string) ([]Result, err
 			})
 		}
 	}
-
-	slog.Debug("finished SSM Document scan",
-		slog.Int("count", len(output)),
-		slog.String("region", s.region),
-		slog.String("target", target),
-	)
 
 	return output, nil
 }

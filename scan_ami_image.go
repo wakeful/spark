@@ -6,7 +6,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
@@ -39,16 +38,6 @@ func newAMIImageScan(cfg aws.Config) *amiImageScan {
 }
 
 func (s *amiImageScan) scan(ctx context.Context, target string) ([]Result, error) {
-	if target == "" {
-		return nil, fmt.Errorf("%w: target account ID is required", errEmptyTarget)
-	}
-
-	slog.Debug(
-		"starting AMI scan",
-		slog.String("region", s.region),
-		slog.String("target", target),
-	)
-
 	var output []Result
 
 	paginator := ec2.NewDescribeImagesPaginator(s.client, &ec2.DescribeImagesInput{
@@ -81,12 +70,6 @@ func (s *amiImageScan) scan(ctx context.Context, target string) ([]Result, error
 			})
 		}
 	}
-
-	slog.Debug("finished AMI scan",
-		slog.Int("count", len(output)),
-		slog.String("region", s.region),
-		slog.String("target", target),
-	)
 
 	return output, nil
 }

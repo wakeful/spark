@@ -1,7 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-// Package gen Code generated. DO NOT EDIT.
+// Package main Code generated. DO NOT EDIT.
 package main
 
 var supportedRegions = []string{

@@ -56,18 +56,6 @@ func Test_amiImageScan_scan(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "should fail when target is empty",
-			ctx:  t.Context(),
-			client: &mockAMIClient{
-				mockImages:   nil,
-				mockImageErr: nil,
-			},
-			region:  "eu-west-1",
-			target:  "",
-			want:    nil,
-			wantErr: true,
-		},
-		{
 			name: "should fail when api returns error",
 			ctx:  t.Context(),
 			client: &mockAMIClient{

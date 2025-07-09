@@ -31,6 +31,7 @@ var (
 type runner interface {
 	scan(ctx context.Context, target string) ([]Result, error)
 	runType() runnerType
+	getRegion() string
 }
 
 type baseRunner struct {
@@ -40,4 +41,8 @@ type baseRunner struct {
 
 func (b baseRunner) runType() runnerType {
 	return b.runnerType
+}
+
+func (b baseRunner) getRegion() string {
+	return b.region
 }

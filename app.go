@@ -93,11 +93,28 @@ func (a *App) Run(ctx context.Context, target string) ([]Result, error) {
 			case <-gCtx.Done():
 				return gCtx.Err()
 			default:
+				if target == "" {
+					return fmt.Errorf("%w: target account ID is required", errEmptyTarget)
+				}
+
+				slog.Debug(
+					"starting scan",
+					slog.String("region", scanRunner.getRegion()),
+					slog.String("target", target),
+					slog.String("type", scanRunner.runType().String()),
+				)
+
 				scanResults, err := scanRunner.scan(ctx, target)
 				if err != nil {
 					return err
 				}
 
+				slog.Debug("finished scan",
+					slog.Int("count", len(scanResults)),
+					slog.String("region", scanRunner.getRegion()),
+					slog.String("target", target),
+					slog.String("type", scanRunner.runType().String()),
+				)
 				buffer <- scanResults
 			}
 

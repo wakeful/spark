@@ -15,7 +15,7 @@ import (
 
 var version = "dev"
 
-func main() {
+func main() { //nolint:cyclop
 	var (
 		target         = flag.String("target", "self", "target AWS account ID")
 		listScanners   = flag.Bool("list-scanners", false, "list available resource types")

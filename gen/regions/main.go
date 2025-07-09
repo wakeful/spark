@@ -1,6 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
+// This package holds a generator that can help with creating a list of all valid AWS regions.
 package main
 
 import (

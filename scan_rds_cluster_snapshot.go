@@ -41,16 +41,6 @@ func newRDSClusterSnapshotRunner(cfg aws.Config) *rdsClusterSnapshotScan {
 }
 
 func (r *rdsClusterSnapshotScan) scan(ctx context.Context, target string) ([]Result, error) {
-	if target == "" {
-		return nil, fmt.Errorf("%w: target account ID is required", errEmptyTarget)
-	}
-
-	slog.Debug(
-		"starting RDS cluster snapshot scan",
-		slog.String("region", r.region),
-		slog.String("target", target),
-	)
-
 	var output []Result
 
 	paginator := rds.NewDescribeDBClusterSnapshotsPaginator(
@@ -95,12 +85,6 @@ func (r *rdsClusterSnapshotScan) scan(ctx context.Context, target string) ([]Res
 			})
 		}
 	}
-
-	slog.Debug("finished RDS cluster snapshot scan",
-		slog.Int("count", len(output)),
-		slog.String("region", r.region),
-		slog.String("target", target),
-	)
 
 	return output, nil
 }
