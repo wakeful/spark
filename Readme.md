@@ -25,6 +25,8 @@ Usage spark:
     verbose log output
   -version
     show version
+  -workers int
+    number of workers used for scanning (default 2)
 
 
 $ spark -list-scanners

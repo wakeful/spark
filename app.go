@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"golang.org/x/sync/errgroup"
@@ -16,12 +17,18 @@ import (
 
 // App represents a struct that provides functionality for interacting with the AWS services.
 type App struct {
-	accountID string
-	runners   []runner
-	stsClient stsClient
+	accountID   string
+	runners     []runner
+	stsClient   stsClient
+	workerLimit int
 }
 
-func newApp(ctx context.Context, check []runnerType, regions []string) (*App, error) {
+func newApp(
+	ctx context.Context,
+	check []runnerType,
+	regions []string,
+	workerLimit int,
+) (*App, error) {
 	if len(regions) == 0 {
 		return nil, errEmptyRegion
 	}
@@ -32,6 +39,10 @@ func newApp(ctx context.Context, check []runnerType, regions []string) (*App, er
 
 	regions = uniqRegions(regions)
 
+	if workerLimit < 1 {
+		workerLimit = 1
+	}
+
 	baseCfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load aws config, %w", err)
@@ -40,6 +51,18 @@ func newApp(ctx context.Context, check []runnerType, regions []string) (*App, er
 	stsCfg := baseCfg.Copy()
 	stsCfg.Region = regions[0]
 
+	runners := setUpRunners(baseCfg, check, regions)
+
+	return &App{
+		accountID:   "",
+		runners:     runners,
+		stsClient:   sts.NewFromConfig(stsCfg),
+		workerLimit: workerLimit,
+	}, nil
+}
+
+// setUpRunners initializes and returns a list of runners based on the specified configuration, checks, and regions.
+func setUpRunners(baseCfg aws.Config, check []runnerType, regions []string) []runner {
 	runners := make([]runner, 0)
 
 	for _, region := range regions {
@@ -64,18 +87,14 @@ func newApp(ctx context.Context, check []runnerType, regions []string) (*App, er
 		}
 	}
 
-	return &App{
-		accountID: "",
-		runners:   runners,
-		stsClient: sts.NewFromConfig(stsCfg),
-	}, nil
+	return runners
 }
 
 // Run executes the scan process on the target using all available runners,
 // and returns the collected results or an error.
 func (a *App) Run(ctx context.Context, target string) ([]Result, error) {
 	group, gCtx := errgroup.WithContext(ctx)
-	group.SetLimit(1)
+	group.SetLimit(a.workerLimit)
 
 	if strings.EqualFold(target, "self") {
 		slog.Debug("replacing self with account ID",

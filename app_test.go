@@ -18,6 +18,7 @@ func Test_newApp(t *testing.T) {
 		name        string
 		check       []runnerType
 		regions     []string
+		workerLimit int
 		wantApp     bool
 		wantErr     bool
 		wantWorkers []runnerType
@@ -83,7 +84,7 @@ func Test_newApp(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := newApp(t.Context(), tt.check, tt.regions)
+			got, err := newApp(t.Context(), tt.check, tt.regions, tt.workerLimit)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("newApp() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -164,7 +165,8 @@ func TestApp_Run(t *testing.T) {
 			t.Parallel()
 
 			a := &App{
-				runners: tt.runners,
+				runners:     tt.runners,
+				workerLimit: 1,
 			}
 
 			got, err := a.Run(tt.ctx, tt.target)

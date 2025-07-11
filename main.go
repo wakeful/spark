@@ -16,6 +16,8 @@ import (
 var version = "dev"
 
 func main() { //nolint:cyclop
+	const numberOfWorkers = 2
+
 	var (
 		target         = flag.String("target", "self", "target AWS account ID")
 		listScanners   = flag.Bool("list-scanners", false, "list available resource types")
@@ -23,6 +25,7 @@ func main() { //nolint:cyclop
 		verbose        = flag.Bool("verbose", false, "verbose log output")
 		scanAllRegions = flag.Bool("region-all", false, "scan all regions")
 		scannersAll    = flag.Bool("scan-all", false, "scan all resource types")
+		workerCount    = flag.Int("workers", numberOfWorkers, "number of workers used for scanning")
 		regionVars     StringSlice
 		scannersVars   StringSlice
 	)
@@ -92,6 +95,7 @@ func main() { //nolint:cyclop
 		ctx,
 		getRunners(scannersVars),
 		regionVars,
+		*workerCount,
 	)
 	if err != nil {
 		slog.Error("failed to initialize app", slog.String("error", err.Error()))
