@@ -23,12 +23,19 @@ type ssmDocumentClient interface {
 	ssm.ListDocumentsAPIClient
 }
 
+type ssmDocumentFilter func(document *types.DocumentIdentifier, target string) bool
+
+func isSSMDocumentOwner(document *types.DocumentIdentifier, target string) bool {
+	return *document.Owner != target
+}
+
 type ssmDocumentScan struct {
 	baseRunner
 	client ssmDocumentClient
+	filter ssmDocumentFilter
 }
 
-func newSSMDocumentScan(cfg aws.Config) *ssmDocumentScan {
+func newSSMDocumentScan(cfg aws.Config, filterFunc ssmDocumentFilter) *ssmDocumentScan {
 	client := ssm.NewFromConfig(cfg)
 
 	return &ssmDocumentScan{
@@ -37,6 +44,7 @@ func newSSMDocumentScan(cfg aws.Config) *ssmDocumentScan {
 			runnerType: ssmDocument,
 		},
 		client: client,
+		filter: filterFunc,
 	}
 }
 
@@ -65,7 +73,7 @@ func (s ssmDocumentScan) scan(ctx context.Context, target string) ([]Result, err
 		}
 
 		for _, document := range page.DocumentIdentifiers {
-			if *document.Owner != target {
+			if s.filter != nil && s.filter(&document, target) {
 				slog.Debug("skipping SSM document",
 					slog.String("name", *document.Name),
 					slog.String("region", s.region),

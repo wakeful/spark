@@ -12,6 +12,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/rds"
+	"github.com/aws/aws-sdk-go-v2/service/rds/types"
 )
 
 var (
@@ -23,12 +24,22 @@ type rdsClusterSnapshotClient interface {
 	rds.DescribeDBClusterSnapshotsAPIClient
 }
 
+type rdsClusterSnapshotFilter func(snapshot *types.DBClusterSnapshot, target string) bool
+
+func isRDSClusterSnapshotOwner(snapshot *types.DBClusterSnapshot, target string) bool {
+	return !strings.Contains(":"+*snapshot.DBClusterSnapshotIdentifier+":", target)
+}
+
 type rdsClusterSnapshotScan struct {
 	baseRunner
 	client rdsClusterSnapshotClient
+	filter rdsClusterSnapshotFilter
 }
 
-func newRDSClusterSnapshotRunner(cfg aws.Config) *rdsClusterSnapshotScan {
+func newRDSClusterSnapshotRunner(
+	cfg aws.Config,
+	filterFunc rdsClusterSnapshotFilter,
+) *rdsClusterSnapshotScan {
 	client := rds.NewFromConfig(cfg)
 
 	return &rdsClusterSnapshotScan{
@@ -37,6 +48,7 @@ func newRDSClusterSnapshotRunner(cfg aws.Config) *rdsClusterSnapshotScan {
 			runnerType: rdsSnapshot,
 		},
 		client: client,
+		filter: filterFunc,
 	}
 }
 
@@ -68,7 +80,7 @@ func (r *rdsClusterSnapshotScan) scan(ctx context.Context, target string) ([]Res
 		}
 
 		for _, snapshot := range page.DBClusterSnapshots {
-			if !strings.Contains(*snapshot.DBClusterSnapshotIdentifier, target) {
+			if r.filter != nil && r.filter(&snapshot, target) {
 				slog.Debug("skipping RDS cluster snapshots",
 					slog.String("name", *snapshot.DBClusterSnapshotIdentifier),
 					slog.String("region", r.region),

@@ -121,6 +121,7 @@ func Test_rdsClusterSnapshotScan_scan(t *testing.T) {
 					runnerType: rdsSnapshot,
 				},
 				client: tt.client,
+				filter: isRDSClusterSnapshotOwner,
 			}
 
 			got, err := r.scan(tt.ctx, tt.target)

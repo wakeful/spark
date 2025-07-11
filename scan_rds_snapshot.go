@@ -12,6 +12,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/rds"
+	"github.com/aws/aws-sdk-go-v2/service/rds/types"
 )
 
 var (
@@ -23,12 +24,19 @@ type rdsSnapshotClient interface {
 	rds.DescribeDBSnapshotsAPIClient
 }
 
+type rdsSnapshotFilter func(snapshot *types.DBSnapshot, target string) bool
+
+func isRDSSnapshotOwner(snapshot *types.DBSnapshot, target string) bool {
+	return !strings.Contains(":"+*snapshot.DBSnapshotIdentifier+":", target)
+}
+
 type rdsSnapshotScan struct {
 	baseRunner
 	client rdsSnapshotClient
+	filter rdsSnapshotFilter
 }
 
-func newRDSSnapshotRunner(cfg aws.Config) *rdsSnapshotScan {
+func newRDSSnapshotRunner(cfg aws.Config, filterFunc rdsSnapshotFilter) *rdsSnapshotScan {
 	client := rds.NewFromConfig(cfg)
 
 	return &rdsSnapshotScan{
@@ -37,6 +45,7 @@ func newRDSSnapshotRunner(cfg aws.Config) *rdsSnapshotScan {
 			runnerType: rdsSnapshot,
 		},
 		client: client,
+		filter: filterFunc,
 	}
 }
 
@@ -65,7 +74,7 @@ func (r *rdsSnapshotScan) scan(ctx context.Context, target string) ([]Result, er
 		}
 
 		for _, snapshot := range page.DBSnapshots {
-			if !strings.Contains(*snapshot.DBSnapshotIdentifier, target) {
+			if r.filter != nil && r.filter(&snapshot, target) {
 				slog.Debug("skipping RDS snapshots",
 					slog.String("name", *snapshot.DBSnapshotIdentifier),
 					slog.String("region", r.region),

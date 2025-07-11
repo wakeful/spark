@@ -123,6 +123,7 @@ func Test_ssmDocumentScan_scan(t *testing.T) {
 					runnerType: ssmDocument,
 				},
 				client: tt.client,
+				filter: isSSMDocumentOwner,
 			}
 
 			got, err := s.scan(tt.ctx, tt.target)

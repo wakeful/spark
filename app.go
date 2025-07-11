@@ -55,11 +55,11 @@ func newApp(ctx context.Context, check []runnerType, regions []string) (*App, er
 			case rdsSnapshot:
 				runners = append(
 					runners,
-					newRDSSnapshotRunner(cfg),
-					newRDSClusterSnapshotRunner(cfg),
+					newRDSSnapshotRunner(cfg, isRDSSnapshotOwner),
+					newRDSClusterSnapshotRunner(cfg, isRDSClusterSnapshotOwner),
 				)
 			case ssmDocument:
-				runners = append(runners, newSSMDocumentScan(cfg))
+				runners = append(runners, newSSMDocumentScan(cfg, isSSMDocumentOwner))
 			}
 		}
 	}
