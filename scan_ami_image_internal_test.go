@@ -1,7 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-package main
+package spark
 
 import (
 	"context"
@@ -98,7 +98,7 @@ func Test_amiImageScan_scan(t *testing.T) {
 					CreationDate: "properly formatted date",
 					Identifier:   "test-image-id",
 					Region:       "eu-west-1",
-					RType:        amiImage,
+					RType:        ImageAMI,
 				},
 			},
 			wantErr: false,
@@ -108,15 +108,15 @@ func Test_amiImageScan_scan(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			s := &amiImageScan{
+			s := &AMIScan{
 				baseRunner: baseRunner{
 					region:     tt.region,
-					runnerType: amiImage,
+					runnerType: ImageAMI,
 				},
 				client: tt.client,
 			}
 
-			got, err := s.scan(tt.ctx, tt.target)
+			got, err := s.Scan(tt.ctx, tt.target)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("scan() error = %v, wantErr %v", err, tt.wantErr)
 

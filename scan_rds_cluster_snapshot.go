@@ -1,7 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-package main
+package spark
 
 import (
 	"context"
@@ -17,42 +17,47 @@ import (
 
 var (
 	_ rds.DescribeDBClusterSnapshotsAPIClient = (rdsClusterSnapshotClient)(nil)
-	_ runner                                  = (*rdsClusterSnapshotScan)(nil)
+	_ Runner                                  = (*RDSClusterSnapshotScan)(nil)
 )
 
 type rdsClusterSnapshotClient interface {
 	rds.DescribeDBClusterSnapshotsAPIClient
 }
 
-type rdsClusterSnapshotFilter func(snapshot *types.DBClusterSnapshot, target string) bool
+// RdsClusterSnapshotFilter defines a function for filtering RDS cluster snapshots.
+type RdsClusterSnapshotFilter func(snapshot *types.DBClusterSnapshot, target string) bool
 
 func isRDSClusterSnapshotOwner(snapshot *types.DBClusterSnapshot, target string) bool {
 	return !strings.Contains(":"+*snapshot.DBClusterSnapshotIdentifier+":", target)
 }
 
-type rdsClusterSnapshotScan struct {
+// RDSClusterSnapshotScan scans RDS cluster snapshots in a region using an RDS client and filter.
+type RDSClusterSnapshotScan struct {
 	baseRunner
+
 	client rdsClusterSnapshotClient
-	filter rdsClusterSnapshotFilter
+	filter RdsClusterSnapshotFilter
 }
 
-func newRDSClusterSnapshotRunner(
+// NewRDSClusterSnapshotRunner creates a new RDSClusterSnapshotScan with the given config and filter.
+func NewRDSClusterSnapshotRunner(
 	cfg aws.Config,
-	filterFunc rdsClusterSnapshotFilter,
-) *rdsClusterSnapshotScan {
+	filterFunc RdsClusterSnapshotFilter,
+) *RDSClusterSnapshotScan {
 	client := rds.NewFromConfig(cfg)
 
-	return &rdsClusterSnapshotScan{
+	return &RDSClusterSnapshotScan{
 		baseRunner: baseRunner{
 			region:     cfg.Region,
-			runnerType: rdsSnapshot,
+			runnerType: SnapshotRDS,
 		},
 		client: client,
 		filter: filterFunc,
 	}
 }
 
-func (r *rdsClusterSnapshotScan) scan(ctx context.Context, target string) ([]Result, error) {
+// Scan retrieves RDS cluster snapshots for the target AWS account.
+func (r *RDSClusterSnapshotScan) Scan(ctx context.Context, target string) ([]Result, error) {
 	var output []Result
 
 	paginator := rds.NewDescribeDBClusterSnapshotsPaginator(
@@ -71,7 +76,7 @@ func (r *rdsClusterSnapshotScan) scan(ctx context.Context, target string) ([]Res
 	)
 	for paginator.HasMorePages() {
 		if ctx.Err() != nil {
-			return nil, fmt.Errorf("%w: %w", errCtxCancelled, ctx.Err())
+			return nil, fmt.Errorf("%w: %w", ErrCtxCancelled, ctx.Err())
 		}
 
 		page, err := paginator.NextPage(ctx)
@@ -93,7 +98,7 @@ func (r *rdsClusterSnapshotScan) scan(ctx context.Context, target string) ([]Res
 				CreationDate: snapshot.SnapshotCreateTime.Format(time.RFC3339),
 				Identifier:   *snapshot.DBClusterSnapshotIdentifier,
 				Region:       r.region,
-				RType:        r.runType(),
+				RType:        r.RunType(),
 			})
 		}
 	}

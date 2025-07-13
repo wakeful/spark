@@ -1,7 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-package main
+package spark
 
 import "testing"
 
@@ -10,18 +10,18 @@ func Test_runnerType_String(t *testing.T) {
 
 	tests := []struct {
 		name  string
-		rType runnerType
+		rType RunnerType
 		want  string
 	}{
 		{
 			name:  "AMI",
-			rType: amiImage,
+			rType: ImageAMI,
 			want:  "AMI",
 		},
 		{
 			name:  "unknown",
-			rType: runnerType(-1),
-			want:  "runnerType(-1)",
+			rType: RunnerType(-1),
+			want:  "RunnerType(-1)",
 		},
 	}
 	for _, tt := range tests {

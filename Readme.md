@@ -42,7 +42,7 @@ ssmDocument
 
 ```shell
 # via the Go toolchain
-go install github.com/wakeful/spark
+go install github.com/wakeful/spark/cmd
 ```
 
 #### Using a binary release

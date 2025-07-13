@@ -1,7 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-package main
+package spark
 
 import (
 	"context"
@@ -16,19 +16,23 @@ import (
 )
 
 var (
-	errEmptyAccountID = errors.New("failed to get caller identity, empty account ID")
-	errCtxCancelled   = errors.New("scan was cancelled")
-	errEmptyCheck     = errors.New(
-		"no resource types specified, use -list-scanners to view all scanners," +
-			" pass -scan scannerType or -scan-all to scan all supported resource types",
+	// ErrEmptyAccountID is returned when the AWS caller identity has no account ID.
+	ErrEmptyAccountID = errors.New("failed to get caller identity, empty account ID")
+	// ErrCtxCancelled indicates the scan was canceled via context.
+	ErrCtxCancelled = errors.New("scan was cancelled")
+	// ErrEmptyCheck is returned when no resource types are specified for scanning.
+	ErrEmptyCheck = errors.New(
+		"no resource types specified; use -list-scanners, -scan <type>, or -scan-all",
 	)
-	errEmptyRegion = errors.New("no AWS regions specified, use -region regionName or -region-all")
-	errEmptyTarget = errors.New("empty target AWS account ID")
+	// ErrEmptyRegion is returned when no AWS regions are specified.
+	ErrEmptyRegion = errors.New("no AWS regions specified; use -region <name> or -region-all")
+	// ErrEmptyTarget indicates a missing target AWS account ID.
+	ErrEmptyTarget = errors.New("empty target AWS account ID")
 )
 
-// getLogger returns a slog.Logger configured with the given output and log level.
+// GetLogger returns a slog.Logger configured with the given output and log level.
 // If verbose is true, the log level is set to debug; otherwise, it defaults to info.
-func getLogger(output io.Writer, verbose *bool) *slog.Logger {
+func GetLogger(output io.Writer, verbose *bool) *slog.Logger {
 	logLevel := slog.LevelInfo
 	if verbose != nil && *verbose {
 		logLevel = slog.LevelDebug
@@ -45,7 +49,8 @@ func getLogger(output io.Writer, verbose *bool) *slog.Logger {
 	return logger
 }
 
-func prepareOutput(output []Result) ([]byte, error) {
+// PrepareOutput returns a pretty-printed JSON byte slice from a list of Result objects.
+func PrepareOutput(output []Result) ([]byte, error) {
 	marshal, err := json.MarshalIndent(struct {
 		Results []Result `json:"results"`
 	}{
@@ -58,25 +63,36 @@ func prepareOutput(output []Result) ([]byte, error) {
 	return marshal, nil
 }
 
-func getRunners(input []string) []runnerType {
-	uniq := make(map[runnerType]struct{})
+// GetSupportedScanners returns supported AWS scanner names.
+func GetSupportedScanners() []string {
+	return []string{
+		ImageAMI.String(),
+		SnapshotEBS.String(),
+		DocumentSSM.String(),
+		SnapshotRDS.String(),
+	}
+}
+
+// GetRunners maps input strings to unique RunnerType values, ignoring case and invalid entries.
+func GetRunners(input []string) []RunnerType {
+	uniq := make(map[RunnerType]struct{})
 
 	for _, scan := range input {
 		switch {
-		case strings.EqualFold(scan, amiImage.String()):
-			uniq[amiImage] = struct{}{}
-		case strings.EqualFold(scan, ebsSnapshot.String()):
-			uniq[ebsSnapshot] = struct{}{}
-		case strings.EqualFold(scan, ssmDocument.String()):
-			uniq[ssmDocument] = struct{}{}
-		case strings.EqualFold(scan, rdsSnapshot.String()):
-			uniq[rdsSnapshot] = struct{}{}
+		case strings.EqualFold(scan, ImageAMI.String()):
+			uniq[ImageAMI] = struct{}{}
+		case strings.EqualFold(scan, SnapshotEBS.String()):
+			uniq[SnapshotEBS] = struct{}{}
+		case strings.EqualFold(scan, DocumentSSM.String()):
+			uniq[DocumentSSM] = struct{}{}
+		case strings.EqualFold(scan, SnapshotRDS.String()):
+			uniq[SnapshotRDS] = struct{}{}
 		default:
 			slog.Debug("invalid scan type", slog.String("type", scan))
 		}
 	}
 
-	output := make([]runnerType, 0, len(uniq))
+	output := make([]RunnerType, 0, len(uniq))
 	for scan := range uniq {
 		output = append(output, scan)
 	}
@@ -104,7 +120,8 @@ func uniqRegions(input []string) []string {
 	return output
 }
 
-func spinner(ctx context.Context, writer io.Writer, ticker <-chan time.Time) {
+// Spinner writes a rotating animation to the writer, updating on each tick until the context is canceled.
+func Spinner(ctx context.Context, writer io.Writer, ticker <-chan time.Time) {
 	spinChars := []rune{
 		'|',
 		'/',

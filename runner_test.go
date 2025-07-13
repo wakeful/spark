@@ -1,11 +1,13 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-package main
+package spark_test
 
 import (
 	"reflect"
 	"testing"
+
+	"github.com/wakeful/spark"
 )
 
 func Test_runnerType_MarshalJSON(t *testing.T) {
@@ -13,7 +15,7 @@ func Test_runnerType_MarshalJSON(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		i       runnerType
+		i       spark.RunnerType
 		want    []byte
 		wantErr bool
 	}{
@@ -21,7 +23,7 @@ func Test_runnerType_MarshalJSON(t *testing.T) {
 			name: "runType(0)",
 			i:    0,
 			want: []byte{
-				34, 114, 117, 110, 110, 101, 114, 84, 121, 112, 101, 40, 48, 41, 34,
+				34, 82, 117, 110, 110, 101, 114, 84, 121, 112, 101, 40, 48, 41, 34,
 			},
 			wantErr: false,
 		},

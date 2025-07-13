@@ -1,27 +1,26 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-package main
+package spark_test
 
 import (
-	"context"
-	"errors"
 	"reflect"
 	"testing"
-	"time"
+
+	"github.com/wakeful/spark"
 )
 
-func Test_newApp(t *testing.T) {
+func Test_NewApp(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name        string
-		check       []runnerType
+		check       []spark.RunnerType
 		regions     []string
 		workerLimit int
 		wantApp     bool
 		wantErr     bool
-		wantWorkers []runnerType
+		wantWorkers []spark.RunnerType
 	}{
 		{
 			name:    "fails when no regions are provided",
@@ -39,43 +38,43 @@ func Test_newApp(t *testing.T) {
 		},
 		{
 			name:    "succeeds",
-			check:   []runnerType{amiImage, ebsSnapshot, ssmDocument},
+			check:   []spark.RunnerType{spark.ImageAMI, spark.SnapshotEBS, spark.DocumentSSM},
 			regions: []string{"eu-west-1"},
 			wantApp: true,
 			wantErr: false,
 		},
 		{
 			name:    "succeeds with multiple uniq regions",
-			check:   []runnerType{amiImage, ebsSnapshot, ssmDocument},
+			check:   []spark.RunnerType{spark.ImageAMI, spark.SnapshotEBS, spark.DocumentSSM},
 			regions: []string{"eu-west-1", "eu-west-1"},
 			wantApp: true,
 			wantErr: false,
-			wantWorkers: []runnerType{
-				amiImage,
-				ebsSnapshot,
-				ssmDocument,
+			wantWorkers: []spark.RunnerType{
+				spark.ImageAMI,
+				spark.SnapshotEBS,
+				spark.DocumentSSM,
 			},
 		},
 		{
 			name: "successes with multiple regions",
-			check: []runnerType{
-				amiImage,
-				ebsSnapshot,
-				ssmDocument,
-				rdsSnapshot,
+			check: []spark.RunnerType{
+				spark.ImageAMI,
+				spark.SnapshotEBS,
+				spark.DocumentSSM,
+				spark.SnapshotRDS,
 			},
 			regions: []string{"eu-west-1", "eu-west-2"},
-			wantWorkers: []runnerType{
-				amiImage,
-				ebsSnapshot,
-				ssmDocument,
-				rdsSnapshot,
-				rdsSnapshot,
-				amiImage,
-				ebsSnapshot,
-				ssmDocument,
-				rdsSnapshot,
-				rdsSnapshot,
+			wantWorkers: []spark.RunnerType{
+				spark.ImageAMI,
+				spark.SnapshotEBS,
+				spark.DocumentSSM,
+				spark.SnapshotRDS,
+				spark.SnapshotRDS,
+				spark.ImageAMI,
+				spark.SnapshotEBS,
+				spark.DocumentSSM,
+				spark.SnapshotRDS,
+				spark.SnapshotRDS,
 			},
 			wantApp: true,
 		},
@@ -84,7 +83,7 @@ func Test_newApp(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := newApp(t.Context(), tt.check, tt.regions, tt.workerLimit)
+			got, err := spark.NewApp(t.Context(), tt.check, tt.regions, tt.workerLimit)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("newApp() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -96,135 +95,14 @@ func Test_newApp(t *testing.T) {
 			}
 
 			if len(tt.wantWorkers) > 0 {
-				var collected []runnerType
-				for _, worker := range got.runners {
-					collected = append(collected, worker.runType())
+				var collected []spark.RunnerType
+				for _, worker := range got.Runners {
+					collected = append(collected, worker.RunType())
 				}
 
 				if !reflect.DeepEqual(collected, tt.wantWorkers) {
 					t.Errorf("workers got = %v, want %v", collected, tt.wantWorkers)
 				}
-			}
-		})
-	}
-}
-
-func TestApp_Run(t *testing.T) {
-	t.Parallel()
-
-	withTimeout, _ := context.WithTimeout(t.Context(), -time.Minute) //nolint:govet
-
-	mockRunners := []runner{
-		&ebsSnapshotScan{
-			baseRunner: baseRunner{
-				region:     "eu-west-1",
-				runnerType: ebsSnapshot,
-			},
-			client: &mockEBSSnapshotClient{
-				mockSnapshot:    nil,
-				mockSnapshotErr: nil,
-			},
-		},
-	}
-
-	tests := []struct {
-		name    string
-		ctx     context.Context //nolint:containedctx
-		runners []runner
-		target  string
-		want    []Result
-		wantErr bool
-	}{
-		{
-			name:    "successful run",
-			ctx:     t.Context(),
-			runners: mockRunners,
-			target:  "42",
-			want:    nil,
-			wantErr: false,
-		},
-		{
-			name:    "fail with timeout",
-			ctx:     withTimeout,
-			runners: mockRunners,
-			target:  "self",
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name:    "error during the scan",
-			ctx:     t.Context(),
-			runners: mockRunners,
-			target:  "",
-			want:    nil,
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			a := &App{
-				runners:     tt.runners,
-				workerLimit: 1,
-			}
-
-			got, err := a.Run(tt.ctx, tt.target)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Run() error = %v, wantErr %v", err, tt.wantErr)
-
-				return
-			}
-
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Run() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestApp_getAccountID(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name      string
-		stsClient stsClient
-		wantErr   bool
-	}{
-		{
-			name: "fail with error",
-			stsClient: &mockSTSClient{
-				mockAccountID:            "",
-				mockGetCallerIdentityErr: errors.New("some error"),
-			},
-			wantErr: true,
-		},
-		{
-			name: "fail with empty account id",
-			stsClient: &mockSTSClient{
-				mockAccountID:            "",
-				mockGetCallerIdentityErr: nil,
-			},
-			wantErr: true,
-		},
-		{
-			name: "obtain account ID without any errors",
-			stsClient: &mockSTSClient{
-				mockAccountID:            "42",
-				mockGetCallerIdentityErr: nil,
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			a := &App{
-				stsClient: tt.stsClient,
-			}
-			if err := a.getAccountID(t.Context()); (err != nil) != tt.wantErr {
-				t.Errorf("getAccountID() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

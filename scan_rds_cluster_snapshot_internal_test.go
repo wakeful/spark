@@ -1,7 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-package main
+package spark
 
 import (
 	"context"
@@ -105,7 +105,7 @@ func Test_rdsClusterSnapshotScan_scan(t *testing.T) {
 					CreationDate: now.Format(time.RFC3339),
 					Identifier:   "test-self-id",
 					Region:       "eu-west-1",
-					RType:        rdsSnapshot,
+					RType:        SnapshotRDS,
 				},
 			},
 			wantErr: false,
@@ -115,16 +115,16 @@ func Test_rdsClusterSnapshotScan_scan(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			r := &rdsClusterSnapshotScan{
+			r := &RDSClusterSnapshotScan{
 				baseRunner: baseRunner{
 					region:     tt.region,
-					runnerType: rdsSnapshot,
+					runnerType: SnapshotRDS,
 				},
 				client: tt.client,
 				filter: isRDSClusterSnapshotOwner,
 			}
 
-			got, err := r.scan(tt.ctx, tt.target)
+			got, err := r.Scan(tt.ctx, tt.target)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("scan() error = %v, wantErr %v", err, tt.wantErr)
 

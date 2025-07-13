@@ -11,6 +11,8 @@ import (
 	"log/slog"
 	"os"
 	"time"
+
+	"github.com/wakeful/spark"
 )
 
 var version = "dev"
@@ -26,8 +28,8 @@ func main() { //nolint:cyclop
 		scanAllRegions = flag.Bool("region-all", false, "scan all regions")
 		scannersAll    = flag.Bool("scan-all", false, "scan all resource types")
 		workerCount    = flag.Int("workers", numberOfWorkers, "number of workers used for scanning")
-		regionVars     StringSlice
-		scannersVars   StringSlice
+		regionVars     spark.StringSlice
+		scannersVars   spark.StringSlice
 	)
 
 	flag.Var(
@@ -42,7 +44,7 @@ func main() { //nolint:cyclop
 	)
 	flag.Parse()
 
-	slog.SetDefault(getLogger(os.Stderr, verbose))
+	slog.SetDefault(spark.GetLogger(os.Stderr, verbose))
 
 	if *showVersion {
 		slog.Info(
@@ -54,12 +56,7 @@ func main() { //nolint:cyclop
 		return
 	}
 
-	types := []string{
-		amiImage.String(),
-		ebsSnapshot.String(),
-		rdsSnapshot.String(),
-		ssmDocument.String(),
-	}
+	types := spark.GetSupportedScanners()
 
 	if *listScanners {
 		slog.Info("available resource types")
@@ -74,7 +71,7 @@ func main() { //nolint:cyclop
 	if *scanAllRegions {
 		slog.Debug("scan all regions")
 
-		regionVars = supportedRegions
+		regionVars = spark.SupportedRegions
 	}
 
 	if *scannersAll {
@@ -84,16 +81,17 @@ func main() { //nolint:cyclop
 	}
 
 	const tickerInterval = 100
+
 	ticker := time.NewTicker(tickerInterval * time.Millisecond)
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	if !*verbose {
-		go spinner(ctx, os.Stderr, ticker.C)
+		go spark.Spinner(ctx, os.Stderr, ticker.C)
 	}
 
-	app, err := newApp(
+	app, err := spark.NewApp(
 		ctx,
-		getRunners(scannersVars),
+		spark.GetRunners(scannersVars),
 		regionVars,
 		*workerCount,
 	)
@@ -103,7 +101,8 @@ func main() { //nolint:cyclop
 		return
 	}
 
-	if errGetAccountID := app.getAccountID(ctx); errGetAccountID != nil {
+	errGetAccountID := app.GetAccountID(ctx)
+	if errGetAccountID != nil {
 		slog.Error(
 			"failed to obtain current aws account ID",
 			slog.String("error", errGetAccountID.Error()),
@@ -119,7 +118,7 @@ func main() { //nolint:cyclop
 		return
 	}
 
-	marshal, err := prepareOutput(output)
+	marshal, err := spark.PrepareOutput(output)
 	if err != nil {
 		slog.Error("failed to marshal output", slog.String("error", err.Error()))
 

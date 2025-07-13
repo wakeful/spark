@@ -3,6 +3,7 @@ linters:
   default: all
   disable:
     - dupl
+    - wsl # deprecated (since v2.2.0)
   settings:
     depguard:
       rules:
@@ -16,6 +17,7 @@ linters:
             - github.com/aws/aws-sdk-go-v2/service/rds
             - github.com/aws/aws-sdk-go-v2/service/ssm
             - github.com/aws/aws-sdk-go-v2/service/sts
+            - github.com/wakeful/spark
             - golang.org/x/sync/errgroup
   exclusions:
     generated: disable

@@ -1,7 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-package main
+package spark
 
 import (
 	"context"
@@ -13,31 +13,35 @@ import (
 
 var (
 	_ ec2.DescribeImagesAPIClient = (amiClient)(nil)
-	_ runner                      = (*amiImageScan)(nil)
+	_ Runner                      = (*AMIScan)(nil)
 )
 
 type amiClient interface {
 	ec2.DescribeImagesAPIClient
 }
 
-type amiImageScan struct {
+// AMIScan scans Amazon Machine Images in a region using an EC2 client.
+type AMIScan struct {
 	baseRunner
+
 	client amiClient
 }
 
-func newAMIImageScan(cfg aws.Config) *amiImageScan {
+// NewAMIScan creates a new AMIScan with the given config.
+func NewAMIScan(cfg aws.Config) *AMIScan {
 	client := ec2.NewFromConfig(cfg)
 
-	return &amiImageScan{
+	return &AMIScan{
 		baseRunner: baseRunner{
 			region:     cfg.Region,
-			runnerType: amiImage,
+			runnerType: ImageAMI,
 		},
 		client: client,
 	}
 }
 
-func (s *amiImageScan) scan(ctx context.Context, target string) ([]Result, error) {
+// Scan retrieves Amazon Machine Images for the target AWS account.
+func (s *AMIScan) Scan(ctx context.Context, target string) ([]Result, error) {
 	var output []Result
 
 	paginator := ec2.NewDescribeImagesPaginator(s.client, &ec2.DescribeImagesInput{
@@ -53,7 +57,7 @@ func (s *amiImageScan) scan(ctx context.Context, target string) ([]Result, error
 	})
 	for paginator.HasMorePages() {
 		if ctx.Err() != nil {
-			return nil, fmt.Errorf("%w: %w", errCtxCancelled, ctx.Err())
+			return nil, fmt.Errorf("%w: %w", ErrCtxCancelled, ctx.Err())
 		}
 
 		page, err := paginator.NextPage(ctx)
@@ -66,7 +70,7 @@ func (s *amiImageScan) scan(ctx context.Context, target string) ([]Result, error
 				CreationDate: *image.CreationDate,
 				Identifier:   *image.ImageId,
 				Region:       s.region,
-				RType:        s.runType(),
+				RType:        s.RunType(),
 			})
 		}
 	}

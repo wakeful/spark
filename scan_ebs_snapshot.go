@@ -1,7 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-package main
+package spark
 
 import (
 	"context"
@@ -14,31 +14,35 @@ import (
 
 var (
 	_ ec2.DescribeSnapshotsAPIClient = (ebsSnapshotClient)(nil)
-	_ runner                         = (*ebsSnapshotScan)(nil)
+	_ Runner                         = (*EBSSnapshotScan)(nil)
 )
 
 type ebsSnapshotClient interface {
 	ec2.DescribeSnapshotsAPIClient
 }
 
-type ebsSnapshotScan struct {
+// EBSSnapshotScan scans EBS snapshots in a region using an EC2 client.
+type EBSSnapshotScan struct {
 	baseRunner
+
 	client ebsSnapshotClient
 }
 
-func newEBSSnapshotRunner(cfg aws.Config) *ebsSnapshotScan {
+// NewEBSSnapshotRunner creates a new EBSSnapshotScan with the given config.
+func NewEBSSnapshotRunner(cfg aws.Config) *EBSSnapshotScan {
 	client := ec2.NewFromConfig(cfg)
 
-	return &ebsSnapshotScan{
+	return &EBSSnapshotScan{
 		baseRunner: baseRunner{
 			region:     cfg.Region,
-			runnerType: ebsSnapshot,
+			runnerType: SnapshotEBS,
 		},
 		client: client,
 	}
 }
 
-func (s *ebsSnapshotScan) scan(ctx context.Context, target string) ([]Result, error) {
+// Scan retrieves EBS snapshots for the target AWS account.
+func (s *EBSSnapshotScan) Scan(ctx context.Context, target string) ([]Result, error) {
 	var output []Result
 
 	paginator := ec2.NewDescribeSnapshotsPaginator(s.client, &ec2.DescribeSnapshotsInput{
@@ -52,7 +56,7 @@ func (s *ebsSnapshotScan) scan(ctx context.Context, target string) ([]Result, er
 	})
 	for paginator.HasMorePages() {
 		if ctx.Err() != nil {
-			return nil, fmt.Errorf("%w: %w", errCtxCancelled, ctx.Err())
+			return nil, fmt.Errorf("%w: %w", ErrCtxCancelled, ctx.Err())
 		}
 
 		page, err := paginator.NextPage(ctx)
@@ -65,7 +69,7 @@ func (s *ebsSnapshotScan) scan(ctx context.Context, target string) ([]Result, er
 				CreationDate: snapshot.CompletionTime.Format(time.RFC3339),
 				Identifier:   *snapshot.SnapshotId,
 				Region:       s.region,
-				RType:        s.runType(),
+				RType:        s.RunType(),
 			})
 		}
 	}

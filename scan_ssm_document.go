@@ -1,7 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-package main
+package spark
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	_ runner                     = (*ssmDocumentScan)(nil)
+	_ Runner                     = (*SSMDocumentScan)(nil)
 	_ ssm.ListDocumentsAPIClient = (ssmDocumentClient)(nil)
 )
 
@@ -23,32 +23,37 @@ type ssmDocumentClient interface {
 	ssm.ListDocumentsAPIClient
 }
 
-type ssmDocumentFilter func(document *types.DocumentIdentifier, target string) bool
+// SSMDocumentFilter defines a function for filtering SSM documents.
+type SSMDocumentFilter func(document *types.DocumentIdentifier, target string) bool
 
 func isSSMDocumentOwner(document *types.DocumentIdentifier, target string) bool {
 	return *document.Owner != target
 }
 
-type ssmDocumentScan struct {
+// SSMDocumentScan scans SSM documents in a region using an SSM client and filter.
+type SSMDocumentScan struct {
 	baseRunner
+
 	client ssmDocumentClient
-	filter ssmDocumentFilter
+	filter SSMDocumentFilter
 }
 
-func newSSMDocumentScan(cfg aws.Config, filterFunc ssmDocumentFilter) *ssmDocumentScan {
+// NewSSMDocumentScan creates a new SSMDocumentScan with the given config and filter.
+func NewSSMDocumentScan(cfg aws.Config, filterFunc SSMDocumentFilter) *SSMDocumentScan {
 	client := ssm.NewFromConfig(cfg)
 
-	return &ssmDocumentScan{
+	return &SSMDocumentScan{
 		baseRunner: baseRunner{
 			region:     cfg.Region,
-			runnerType: ssmDocument,
+			runnerType: DocumentSSM,
 		},
 		client: client,
 		filter: filterFunc,
 	}
 }
 
-func (s ssmDocumentScan) scan(ctx context.Context, target string) ([]Result, error) {
+// Scan retrieves SSM documents matching the filter.
+func (s SSMDocumentScan) Scan(ctx context.Context, target string) ([]Result, error) {
 	var output []Result
 
 	paginator := ssm.NewListDocumentsPaginator(s.client, &ssm.ListDocumentsInput{
@@ -64,7 +69,7 @@ func (s ssmDocumentScan) scan(ctx context.Context, target string) ([]Result, err
 	})
 	for paginator.HasMorePages() {
 		if ctx.Err() != nil {
-			return nil, fmt.Errorf("%w: %w", errCtxCancelled, ctx.Err())
+			return nil, fmt.Errorf("%w: %w", ErrCtxCancelled, ctx.Err())
 		}
 
 		page, err := paginator.NextPage(ctx)
@@ -87,7 +92,7 @@ func (s ssmDocumentScan) scan(ctx context.Context, target string) ([]Result, err
 				CreationDate: document.CreatedDate.Format(time.RFC3339),
 				Identifier:   *document.Name,
 				Region:       s.region,
-				RType:        s.runType(),
+				RType:        s.RunType(),
 			})
 		}
 	}

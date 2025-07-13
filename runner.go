@@ -1,7 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-package main
+package spark
 
 import (
 	"context"
@@ -9,37 +9,45 @@ import (
 	"fmt"
 )
 
-//go:generate go tool -modfile=tools/go.mod stringer -type=runnerType -linecomment -output=runner_type_string.go
-type runnerType int
+// RunnerType represents the type of runner used in specific operations or processes.
+//
+//go:generate go tool -modfile=tools/go.mod stringer -type=RunnerType -linecomment -output=runner_type_string.go
+type RunnerType int
 
-func (i runnerType) MarshalJSON() ([]byte, error) {
+// MarshalJSON customizes the JSON marshaling of RunnerType by returning its string representation.
+func (i RunnerType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(i.String()) //nolint:wrapcheck
 }
 
 const (
-	amiImage    runnerType = iota + 1 // AMI
-	ebsSnapshot                       // snapshotsEBS
-	rdsSnapshot                       // snapshotsRDS
-	ssmDocument
+	// ImageAMI represents a scanner for Amazon Machine Images (AMIs).
+	ImageAMI RunnerType = iota + 1 // AMI
+	// SnapshotEBS represents a scanner for EBS snapshots.
+	SnapshotEBS // snapshotsEBS
+	// SnapshotRDS represents a scanner for RDS snapshots.
+	SnapshotRDS // snapshotsRDS
+	// DocumentSSM represents a scanner for SSM documents.
+	DocumentSSM
 )
 
 var (
-	_ json.Marshaler = (*runnerType)(nil)
-	_ fmt.Stringer   = (*runnerType)(nil)
+	_ json.Marshaler = (*RunnerType)(nil)
+	_ fmt.Stringer   = (*RunnerType)(nil)
 )
 
-type runner interface {
-	scan(ctx context.Context, target string) ([]Result, error)
-	runType() runnerType
+// Runner defines an interface for scanning and retrieving runner metadata.
+type Runner interface {
+	Scan(ctx context.Context, target string) ([]Result, error)
+	RunType() RunnerType
 	getRegion() string
 }
 
 type baseRunner struct {
 	region     string
-	runnerType runnerType
+	runnerType RunnerType
 }
 
-func (b baseRunner) runType() runnerType {
+func (b baseRunner) RunType() RunnerType {
 	return b.runnerType
 }
 

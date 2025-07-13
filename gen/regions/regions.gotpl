@@ -1,7 +1,8 @@
-// Package main Code generated. DO NOT EDIT.
-package main
+// Package spark Code generated. DO NOT EDIT.
+package spark
 
-var supportedRegions = []string{
+// SupportedRegions specifies the AWS regions supported for scanning by the Spark application.
+var SupportedRegions = []string{
 	{{- range .Regions }}
 	{{ printf "%q" . }},
 	{{- end }}

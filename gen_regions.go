@@ -1,10 +1,11 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-// Package main Code generated. DO NOT EDIT.
-package main
+// Package spark Code generated. DO NOT EDIT.
+package spark
 
-var supportedRegions = []string{
+// SupportedRegions specifies the AWS regions supported for scanning by the Spark application.
+var SupportedRegions = []string{
 	"ap-northeast-1",
 	"ap-northeast-2",
 	"ap-northeast-3",

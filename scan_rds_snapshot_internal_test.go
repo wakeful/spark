@@ -1,7 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-package main
+package spark
 
 import (
 	"context"
@@ -11,26 +11,28 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go-v2/service/rds"
+	"github.com/aws/aws-sdk-go-v2/service/rds/types"
 )
 
-type mockEBSSnapshotClient struct {
-	mockSnapshot    []types.Snapshot
-	mockSnapshotErr error
+type mockRDSSnapshotClient struct {
+	mockDBSnapshot             []types.DBSnapshot
+	mockDescribeDBSnapshotsErr error
 }
 
-func (m *mockEBSSnapshotClient) DescribeSnapshots(
+func (m *mockRDSSnapshotClient) DescribeDBSnapshots(
 	_ context.Context,
-	_ *ec2.DescribeSnapshotsInput,
-	_ ...func(*ec2.Options),
-) (*ec2.DescribeSnapshotsOutput, error) {
-	return &ec2.DescribeSnapshotsOutput{Snapshots: m.mockSnapshot}, m.mockSnapshotErr
+	_ *rds.DescribeDBSnapshotsInput,
+	_ ...func(*rds.Options),
+) (*rds.DescribeDBSnapshotsOutput, error) {
+	return &rds.DescribeDBSnapshotsOutput{
+		DBSnapshots: m.mockDBSnapshot,
+	}, m.mockDescribeDBSnapshotsErr
 }
 
-var _ ebsSnapshotClient = (*mockEBSSnapshotClient)(nil)
+var _ rdsSnapshotClient = (*mockRDSSnapshotClient)(nil)
 
-func Test_ebsSnapshotScan_scan(t *testing.T) {
+func Test_rdsSnapshotScan_scan(t *testing.T) {
 	t.Parallel()
 	withTimeout, _ := context.WithTimeout(t.Context(), -time.Minute) //nolint:govet
 	now := time.Now()
@@ -38,7 +40,7 @@ func Test_ebsSnapshotScan_scan(t *testing.T) {
 	tests := []struct {
 		name    string
 		ctx     context.Context //nolint:containedctx
-		client  ebsSnapshotClient
+		client  rdsSnapshotClient
 		region  string
 		target  string
 		want    []Result
@@ -47,9 +49,9 @@ func Test_ebsSnapshotScan_scan(t *testing.T) {
 		{
 			name: "should fail when ctx is cancelled",
 			ctx:  withTimeout,
-			client: &mockEBSSnapshotClient{
-				mockSnapshot:    nil,
-				mockSnapshotErr: nil,
+			client: &mockRDSSnapshotClient{
+				mockDBSnapshot:             nil,
+				mockDescribeDBSnapshotsErr: nil,
 			},
 			region:  "eu-west-1",
 			target:  "self",
@@ -57,11 +59,11 @@ func Test_ebsSnapshotScan_scan(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "should fail when api returns error",
+			name: "should fail when instance api returns error",
 			ctx:  t.Context(),
-			client: &mockEBSSnapshotClient{
-				mockSnapshot:    nil,
-				mockSnapshotErr: errors.New("some error"),
+			client: &mockRDSSnapshotClient{
+				mockDBSnapshot:             nil,
+				mockDescribeDBSnapshotsErr: errors.New("some error"),
 			},
 			region:  "eu-west-1",
 			target:  "self",
@@ -71,9 +73,9 @@ func Test_ebsSnapshotScan_scan(t *testing.T) {
 		{
 			name: "should succeed with zero snapshots when no snapshots found",
 			ctx:  t.Context(),
-			client: &mockEBSSnapshotClient{
-				mockSnapshot:    nil,
-				mockSnapshotErr: nil,
+			client: &mockRDSSnapshotClient{
+				mockDBSnapshot:             nil,
+				mockDescribeDBSnapshotsErr: nil,
 			},
 			region:  "eu-west-1",
 			target:  "self",
@@ -81,25 +83,29 @@ func Test_ebsSnapshotScan_scan(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "should succeed with one snapshot",
+			name: "should succeed with one instance snapshot",
 			ctx:  t.Context(),
-			client: &mockEBSSnapshotClient{
-				mockSnapshot: []types.Snapshot{
+			client: &mockRDSSnapshotClient{
+				mockDBSnapshot: []types.DBSnapshot{
 					{
-						CompletionTime: &now,
-						SnapshotId:     aws.String("test-snapshot-id"),
+						SnapshotCreateTime:   &now,
+						DBSnapshotIdentifier: aws.String("test-self-id"),
+					},
+					{
+						SnapshotCreateTime:   &now,
+						DBSnapshotIdentifier: aws.String("test-skip-id"),
 					},
 				},
-				mockSnapshotErr: nil,
+				mockDescribeDBSnapshotsErr: nil,
 			},
 			region: "eu-west-1",
 			target: "self",
 			want: []Result{
 				{
 					CreationDate: now.Format(time.RFC3339),
-					Identifier:   "test-snapshot-id",
+					Identifier:   "test-self-id",
 					Region:       "eu-west-1",
-					RType:        ebsSnapshot,
+					RType:        SnapshotRDS,
 				},
 			},
 			wantErr: false,
@@ -109,15 +115,16 @@ func Test_ebsSnapshotScan_scan(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			s := &ebsSnapshotScan{
+			r := &RDSSnapshotScan{
 				baseRunner: baseRunner{
 					region:     tt.region,
-					runnerType: ebsSnapshot,
+					runnerType: SnapshotRDS,
 				},
 				client: tt.client,
+				filter: isRDSSnapshotOwner,
 			}
 
-			got, err := s.scan(tt.ctx, tt.target)
+			got, err := r.Scan(tt.ctx, tt.target)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("scan() error = %v, wantErr %v", err, tt.wantErr)
 

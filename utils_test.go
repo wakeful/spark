@@ -1,7 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-package main
+package spark_test
 
 import (
 	"bytes"
@@ -13,9 +13,10 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/wakeful/spark"
 )
 
-func Test_getLogger(t *testing.T) {
+func Test_GetLogger(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -66,7 +67,7 @@ func Test_getLogger(t *testing.T) {
 
 			var buf bytes.Buffer
 
-			logger := getLogger(&buf, tt.verbose)
+			logger := spark.GetLogger(&buf, tt.verbose)
 
 			if logger == nil {
 				t.Fatal("Expected logger to not be nil")
@@ -99,18 +100,18 @@ func Test_getLogger(t *testing.T) {
 	}
 }
 
-func Test_prepareOutput(t *testing.T) {
+func Test_PrepareOutput(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name    string
-		output  []Result
+		output  []spark.Result
 		want    []byte
 		wantErr bool
 	}{
 		{
 			name:   "empty results list",
-			output: []Result{},
+			output: []spark.Result{},
 			want: []byte{
 				123,
 				10,
@@ -139,7 +140,7 @@ func Test_prepareOutput(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := prepareOutput(tt.output)
+			got, err := spark.PrepareOutput(tt.output)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("prepareOutput() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -153,44 +154,49 @@ func Test_prepareOutput(t *testing.T) {
 	}
 }
 
-func Test_getRunners(t *testing.T) {
+func Test_GetRunners(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name  string
 		input []string
-		want  []runnerType
+		want  []spark.RunnerType
 	}{
 		{
 			name:  "empty input",
 			input: []string{},
-			want:  []runnerType{},
+			want:  []spark.RunnerType{},
 		},
 		{
 			name: "check that the result is a uniq slice",
 			input: []string{
 				"ami",
 				"AMi",
-				"ssmDocument",
+				"DocumentSSM",
 				"snapshotsEBS",
 				"snapshotsRDS",
 				"42",
 			},
-			want: []runnerType{amiImage, ebsSnapshot, rdsSnapshot, ssmDocument},
+			want: []spark.RunnerType{
+				spark.ImageAMI,
+				spark.DocumentSSM,
+				spark.SnapshotEBS,
+				spark.SnapshotRDS,
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			if got := getRunners(tt.input); !reflect.DeepEqual(got, tt.want) {
+			if got := spark.GetRunners(tt.input); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getRunners() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_spinner(t *testing.T) {
+func Test_Spinner(t *testing.T) {
 	t.Parallel()
 
 	ctx, cancel := context.WithCancel(t.Context())
@@ -199,9 +205,12 @@ func Test_spinner(t *testing.T) {
 	var buf bytes.Buffer
 
 	mockTicker := make(chan time.Time)
-	go spinner(ctx, &buf, mockTicker)
+	go spark.Spinner(ctx, &buf, mockTicker)
+
 	mockTicker <- time.Now()
+
 	mockTicker <- time.Now()
+
 	mockTicker <- time.Now()
 
 	cancel()
@@ -209,5 +218,13 @@ func Test_spinner(t *testing.T) {
 	want := "\r\u001B[Kscanning... |\r\u001B[Kscanning... /\r\u001B[Kscanning... -"
 	if got := buf.String(); !reflect.DeepEqual(got, want) {
 		t.Errorf("getRunners() = %v, want %v", got, want)
+	}
+}
+
+func TestGetSupportedScanners(t *testing.T) {
+	t.Parallel()
+
+	if got := spark.GetSupportedScanners(); !reflect.DeepEqual(len(got), 4) {
+		t.Errorf("GetSupportedScanners() = %v, want %v", got, 4)
 	}
 }

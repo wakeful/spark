@@ -1,7 +1,7 @@
 // Copyright 2025 variHQ OÜ
 // SPDX-License-Identifier: BSD-3-Clause
 
-package main
+package spark
 
 import (
 	"context"
@@ -18,23 +18,24 @@ import (
 // App represents a struct that provides functionality for interacting with the AWS services.
 type App struct {
 	accountID   string
-	runners     []runner
+	Runners     []Runner
 	stsClient   stsClient
 	workerLimit int
 }
 
-func newApp(
+// NewApp initializes and returns a new App with the given settings and runners.
+func NewApp(
 	ctx context.Context,
-	check []runnerType,
+	check []RunnerType,
 	regions []string,
 	workerLimit int,
 ) (*App, error) {
 	if len(regions) == 0 {
-		return nil, errEmptyRegion
+		return nil, ErrEmptyRegion
 	}
 
 	if len(check) == 0 {
-		return nil, errEmptyCheck
+		return nil, ErrEmptyCheck
 	}
 
 	regions = uniqRegions(regions)
@@ -55,15 +56,15 @@ func newApp(
 
 	return &App{
 		accountID:   "",
-		runners:     runners,
+		Runners:     runners,
 		stsClient:   sts.NewFromConfig(stsCfg),
 		workerLimit: workerLimit,
 	}, nil
 }
 
 // setUpRunners initializes and returns a list of runners based on the specified configuration, checks, and regions.
-func setUpRunners(baseCfg aws.Config, check []runnerType, regions []string) []runner {
-	runners := make([]runner, 0)
+func setUpRunners(baseCfg aws.Config, check []RunnerType, regions []string) []Runner {
+	runners := make([]Runner, 0)
 
 	for _, region := range regions {
 		cfg := baseCfg.Copy()
@@ -71,18 +72,18 @@ func setUpRunners(baseCfg aws.Config, check []runnerType, regions []string) []ru
 
 		for _, scan := range check {
 			switch scan {
-			case amiImage:
-				runners = append(runners, newAMIImageScan(cfg))
-			case ebsSnapshot:
-				runners = append(runners, newEBSSnapshotRunner(cfg))
-			case rdsSnapshot:
+			case ImageAMI:
+				runners = append(runners, NewAMIScan(cfg))
+			case SnapshotEBS:
+				runners = append(runners, NewEBSSnapshotRunner(cfg))
+			case SnapshotRDS:
 				runners = append(
 					runners,
-					newRDSSnapshotRunner(cfg, isRDSSnapshotOwner),
-					newRDSClusterSnapshotRunner(cfg, isRDSClusterSnapshotOwner),
+					NewRDSSnapshotRunner(cfg, isRDSSnapshotOwner),
+					NewRDSClusterSnapshotRunner(cfg, isRDSClusterSnapshotOwner),
 				)
-			case ssmDocument:
-				runners = append(runners, newSSMDocumentScan(cfg, isSSMDocumentOwner))
+			case DocumentSSM:
+				runners = append(runners, NewSSMDocumentScan(cfg, isSSMDocumentOwner))
 			}
 		}
 	}
@@ -90,9 +91,8 @@ func setUpRunners(baseCfg aws.Config, check []runnerType, regions []string) []ru
 	return runners
 }
 
-// Run executes the scan process on the target using all available runners,
-// and returns the collected results or an error.
-func (a *App) Run(ctx context.Context, target string) ([]Result, error) {
+// Run scans the target using all runners and returns the results or an error.
+func (a *App) Run(ctx context.Context, target string) ([]Result, error) { //nolint:funlen
 	group, gCtx := errgroup.WithContext(ctx)
 	group.SetLimit(a.workerLimit)
 
@@ -104,36 +104,41 @@ func (a *App) Run(ctx context.Context, target string) ([]Result, error) {
 		target = a.accountID
 	}
 
-	buffer := make(chan []Result, len(a.runners))
-
-	for _, scanRunner := range a.runners {
+	buffer := make(chan []Result, len(a.Runners))
+	for _, scanRunner := range a.Runners {
 		group.Go(func() error {
 			select {
 			case <-gCtx.Done():
 				return gCtx.Err()
 			default:
 				if target == "" {
-					return fmt.Errorf("%w: target account ID is required", errEmptyTarget)
+					return fmt.Errorf("%w: target account ID is required", ErrEmptyTarget)
 				}
 
 				slog.Debug(
 					"starting scan",
 					slog.String("region", scanRunner.getRegion()),
 					slog.String("target", target),
-					slog.String("type", scanRunner.runType().String()),
+					slog.String("type", scanRunner.RunType().String()),
 				)
 
-				scanResults, err := scanRunner.scan(ctx, target)
+				scanResults, err := scanRunner.Scan(ctx, target)
 				if err != nil {
-					return err
+					return fmt.Errorf(
+						"failed to scan %s, in region %s, %w",
+						scanRunner.RunType().String(),
+						scanRunner.getRegion(),
+						err,
+					)
 				}
 
 				slog.Debug("finished scan",
 					slog.Int("count", len(scanResults)),
 					slog.String("region", scanRunner.getRegion()),
 					slog.String("target", target),
-					slog.String("type", scanRunner.runType().String()),
+					slog.String("type", scanRunner.RunType().String()),
 				)
+
 				buffer <- scanResults
 			}
 
@@ -141,7 +146,8 @@ func (a *App) Run(ctx context.Context, target string) ([]Result, error) {
 		})
 	}
 
-	if err := group.Wait(); err != nil {
+	err := group.Wait()
+	if err != nil {
 		return nil, fmt.Errorf("failed to run all checks, %w", err)
 	}
 
@@ -155,14 +161,15 @@ func (a *App) Run(ctx context.Context, target string) ([]Result, error) {
 	return output, nil
 }
 
-func (a *App) getAccountID(ctx context.Context) error {
+// GetAccountID fetches the AWS account ID and sets it in App.
+func (a *App) GetAccountID(ctx context.Context) error {
 	output, err := a.stsClient.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
 	if err != nil {
 		return fmt.Errorf("failed to get caller identity, %w", err)
 	}
 
 	if *output.Account == "" {
-		return errEmptyAccountID
+		return ErrEmptyAccountID
 	}
 
 	a.accountID = *output.Account

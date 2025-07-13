@@ -67,7 +67,8 @@ func main() {
 
 	supportedRegionsTemplate := template.Must(template.New("").Parse(templateContent))
 
-	if errTemplate := supportedRegionsTemplate.Execute(target, regionTemplate{Regions: regions}); errTemplate != nil {
+	errTemplate := supportedRegionsTemplate.Execute(target, regionTemplate{Regions: regions})
+	if errTemplate != nil {
 		slog.Error("failed to execute template", slog.String("error", errTemplate.Error()))
 
 		return

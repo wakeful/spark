@@ -3,6 +3,6 @@
 
 //go:build aws
 
-package main
+package spark
 
 //go:generate go run ./gen/regions/main.go
