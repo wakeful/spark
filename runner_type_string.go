@@ -8,7 +8,6 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-
 	_ = x[ImageAMI-1]
 	_ = x[SnapshotEBS-2]
 	_ = x[SnapshotRDS-3]
@@ -20,10 +19,9 @@ const _RunnerType_name = "AMIsnapshotsEBSsnapshotsRDSDocumentSSM"
 var _RunnerType_index = [...]uint8{0, 3, 15, 27, 38}
 
 func (i RunnerType) String() string {
-	i -= 1
-	if i < 0 || i >= RunnerType(len(_RunnerType_index)-1) {
-		return "RunnerType(" + strconv.FormatInt(int64(i+1), 10) + ")"
+	idx := int(i) - 1
+	if i < 1 || idx >= len(_RunnerType_index)-1 {
+		return "RunnerType(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-
-	return _RunnerType_name[_RunnerType_index[i]:_RunnerType_index[i+1]]
+	return _RunnerType_name[_RunnerType_index[idx]:_RunnerType_index[idx+1]]
 }

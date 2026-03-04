@@ -20,7 +20,7 @@ linters:
             - github.com/wakeful/spark
             - golang.org/x/sync/errgroup
   exclusions:
-    generated: disable
+    generated: enable
     rules:
       - path: gen/
         linters:

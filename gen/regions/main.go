@@ -61,7 +61,7 @@ func main() {
 	defer func(target *os.File) {
 		errCloseFile := target.Close()
 		if errCloseFile != nil {
-			slog.Error("failed to close target file", slog.String("error", errCloseFile.Error()))
+			slog.Error("failed to close target file", slog.Any("error", errCloseFile))
 		}
 	}(target)
 
@@ -69,7 +69,7 @@ func main() {
 
 	errTemplate := supportedRegionsTemplate.Execute(target, regionTemplate{Regions: regions})
 	if errTemplate != nil {
-		slog.Error("failed to execute template", slog.String("error", errTemplate.Error()))
+		slog.Error("failed to execute template", slog.Any("error", errTemplate))
 
 		return
 	}
