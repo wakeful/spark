@@ -14,7 +14,7 @@ import (
 func TestApp_Run(t *testing.T) {
 	t.Parallel()
 
-	withTimeout, _ := context.WithTimeout(t.Context(), -time.Minute) //nolint:govet
+	withTimeout, _ := context.WithTimeout(t.Context(), -time.Minute) //nolint:govet,gosec
 
 	mockRunners := []Runner{
 		&EBSSnapshotScan{

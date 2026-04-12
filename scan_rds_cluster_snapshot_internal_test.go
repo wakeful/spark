@@ -34,7 +34,7 @@ var _ rdsClusterSnapshotClient = (*mockRDSClusterSnapshotClient)(nil)
 
 func Test_rdsClusterSnapshotScan_scan(t *testing.T) {
 	t.Parallel()
-	withTimeout, _ := context.WithTimeout(t.Context(), -time.Minute) //nolint:govet
+	withTimeout, _ := context.WithTimeout(t.Context(), -time.Minute) //nolint:govet,gosec
 	now := time.Now()
 
 	tests := []struct {

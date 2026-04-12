@@ -32,7 +32,7 @@ var _ amiClient = (*mockAMIClient)(nil)
 
 func Test_amiImageScan_scan(t *testing.T) {
 	t.Parallel()
-	withTimeout, _ := context.WithTimeout(t.Context(), -time.Minute) //nolint:govet
+	withTimeout, _ := context.WithTimeout(t.Context(), -time.Minute) //nolint:govet,gosec
 
 	tests := []struct {
 		name    string

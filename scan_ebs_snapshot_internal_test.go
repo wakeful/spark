@@ -32,7 +32,7 @@ var _ ebsSnapshotClient = (*mockEBSSnapshotClient)(nil)
 
 func Test_ebsSnapshotScan_scan(t *testing.T) {
 	t.Parallel()
-	withTimeout, _ := context.WithTimeout(t.Context(), -time.Minute) //nolint:govet
+	withTimeout, _ := context.WithTimeout(t.Context(), -time.Minute) //nolint:govet,gosec
 	now := time.Now()
 
 	tests := []struct {
