@@ -118,12 +118,10 @@ func Test_ssmDocumentScan_scan(t *testing.T) {
 			t.Parallel()
 
 			s := SSMDocumentScan{
-				baseRunner: baseRunner{
-					region:     tt.region,
-					runnerType: DocumentSSM,
-				},
-				client: tt.client,
-				filter: isSSMDocumentOwner,
+				region:     tt.region,
+				runnerType: DocumentSSM,
+				client:     tt.client,
+				filter:     isSSMDocumentOwner,
 			}
 
 			got, err := s.Scan(tt.ctx, tt.target)

@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	_ rds.DescribeDBClusterSnapshotsAPIClient = (rdsClusterSnapshotClient)(nil)
+	_ rds.DescribeDBClusterSnapshotsAPIClient = rdsClusterSnapshotClient(nil)
 	_ Runner                                  = (*RDSClusterSnapshotScan)(nil)
 )
 
@@ -47,12 +47,10 @@ func NewRDSClusterSnapshotRunner(
 	client := rds.NewFromConfig(cfg)
 
 	return &RDSClusterSnapshotScan{
-		baseRunner: baseRunner{
-			region:     cfg.Region,
-			runnerType: SnapshotRDS,
-		},
-		client: client,
-		filter: filterFunc,
+		region:     cfg.Region,
+		runnerType: SnapshotRDS,
+		client:     client,
+		filter:     filterFunc,
 	}
 }
 

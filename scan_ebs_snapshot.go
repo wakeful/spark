@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	_ ec2.DescribeSnapshotsAPIClient = (ebsSnapshotClient)(nil)
+	_ ec2.DescribeSnapshotsAPIClient = ebsSnapshotClient(nil)
 	_ Runner                         = (*EBSSnapshotScan)(nil)
 )
 
@@ -33,11 +33,9 @@ func NewEBSSnapshotRunner(cfg aws.Config) *EBSSnapshotScan {
 	client := ec2.NewFromConfig(cfg)
 
 	return &EBSSnapshotScan{
-		baseRunner: baseRunner{
-			region:     cfg.Region,
-			runnerType: SnapshotEBS,
-		},
-		client: client,
+		region:     cfg.Region,
+		runnerType: SnapshotEBS,
+		client:     client,
 	}
 }
 

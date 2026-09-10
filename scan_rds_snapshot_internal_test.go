@@ -116,12 +116,10 @@ func Test_rdsSnapshotScan_scan(t *testing.T) {
 			t.Parallel()
 
 			r := &RDSSnapshotScan{
-				baseRunner: baseRunner{
-					region:     tt.region,
-					runnerType: SnapshotRDS,
-				},
-				client: tt.client,
-				filter: isRDSSnapshotOwner,
+				region:     tt.region,
+				runnerType: SnapshotRDS,
+				client:     tt.client,
+				filter:     isRDSSnapshotOwner,
 			}
 
 			got, err := r.Scan(tt.ctx, tt.target)

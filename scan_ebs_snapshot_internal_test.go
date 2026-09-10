@@ -110,11 +110,9 @@ func Test_ebsSnapshotScan_scan(t *testing.T) {
 			t.Parallel()
 
 			s := &EBSSnapshotScan{
-				baseRunner: baseRunner{
-					region:     tt.region,
-					runnerType: SnapshotEBS,
-				},
-				client: tt.client,
+				region:     tt.region,
+				runnerType: SnapshotEBS,
+				client:     tt.client,
 			}
 
 			got, err := s.Scan(tt.ctx, tt.target)

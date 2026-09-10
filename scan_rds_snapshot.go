@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	_ rds.DescribeDBSnapshotsAPIClient = (rdsSnapshotClient)(nil)
+	_ rds.DescribeDBSnapshotsAPIClient = rdsSnapshotClient(nil)
 	_ Runner                           = (*RDSSnapshotScan)(nil)
 )
 
@@ -44,12 +44,10 @@ func NewRDSSnapshotRunner(cfg aws.Config, filterFunc RdsSnapshotFilter) *RDSSnap
 	client := rds.NewFromConfig(cfg)
 
 	return &RDSSnapshotScan{
-		baseRunner: baseRunner{
-			region:     cfg.Region,
-			runnerType: SnapshotRDS,
-		},
-		client: client,
-		filter: filterFunc,
+		region:     cfg.Region,
+		runnerType: SnapshotRDS,
+		client:     client,
+		filter:     filterFunc,
 	}
 }
 

@@ -18,10 +18,8 @@ func TestApp_Run(t *testing.T) {
 
 	mockRunners := []Runner{
 		&EBSSnapshotScan{
-			baseRunner: baseRunner{
-				region:     "eu-west-1",
-				runnerType: SnapshotEBS,
-			},
+			region:     "eu-west-1",
+			runnerType: SnapshotEBS,
 			client: &mockEBSSnapshotClient{
 				mockSnapshot:    nil,
 				mockSnapshotErr: nil,

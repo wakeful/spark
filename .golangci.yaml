@@ -3,6 +3,9 @@ linters:
   default: all
   disable:
     - dupl
+    - exhaustruct # deprecated since v2.13.0
+    - exhaustruct_v5
+    - gomodguard # deprecated since v2.12.0
     - wsl # deprecated (since v2.2.0)
   settings:
     depguard:
@@ -24,7 +27,8 @@ linters:
     rules:
       - path: gen/
         linters:
-          - exhaustruct
+          - exhaustruct # deprecated since v2.13.0
+          - exhaustruct_v5
       - path: main.go
         linters:
           - funlen
@@ -35,8 +39,10 @@ linters:
         linters:
           - dupl
           - err113
-          - exhaustruct
+          - exhaustruct # deprecated since v2.13.0
+          - exhaustruct_v5
           - funlen
+          - goconst
           - varnamelen
 formatters:
   enable:

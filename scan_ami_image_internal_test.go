@@ -109,11 +109,9 @@ func Test_amiImageScan_scan(t *testing.T) {
 			t.Parallel()
 
 			s := &AMIScan{
-				baseRunner: baseRunner{
-					region:     tt.region,
-					runnerType: ImageAMI,
-				},
-				client: tt.client,
+				region:     tt.region,
+				runnerType: ImageAMI,
+				client:     tt.client,
 			}
 
 			got, err := s.Scan(tt.ctx, tt.target)

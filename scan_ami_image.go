@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	_ ec2.DescribeImagesAPIClient = (amiClient)(nil)
+	_ ec2.DescribeImagesAPIClient = amiClient(nil)
 	_ Runner                      = (*AMIScan)(nil)
 )
 
@@ -32,11 +32,9 @@ func NewAMIScan(cfg aws.Config) *AMIScan {
 	client := ec2.NewFromConfig(cfg)
 
 	return &AMIScan{
-		baseRunner: baseRunner{
-			region:     cfg.Region,
-			runnerType: ImageAMI,
-		},
-		client: client,
+		region:     cfg.Region,
+		runnerType: ImageAMI,
+		client:     client,
 	}
 }
 

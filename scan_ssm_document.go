@@ -16,7 +16,7 @@ import (
 
 var (
 	_ Runner                     = (*SSMDocumentScan)(nil)
-	_ ssm.ListDocumentsAPIClient = (ssmDocumentClient)(nil)
+	_ ssm.ListDocumentsAPIClient = ssmDocumentClient(nil)
 )
 
 type ssmDocumentClient interface {
@@ -43,12 +43,10 @@ func NewSSMDocumentScan(cfg aws.Config, filterFunc SSMDocumentFilter) *SSMDocume
 	client := ssm.NewFromConfig(cfg)
 
 	return &SSMDocumentScan{
-		baseRunner: baseRunner{
-			region:     cfg.Region,
-			runnerType: DocumentSSM,
-		},
-		client: client,
-		filter: filterFunc,
+		region:     cfg.Region,
+		runnerType: DocumentSSM,
+		client:     client,
+		filter:     filterFunc,
 	}
 }
 
