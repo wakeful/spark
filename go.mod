@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/rds v1.132.1
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.81.4
 	github.com/aws/aws-sdk-go-v2/service/sts v1.51.8
-	golang.org/x/sync v0.24.0
+	golang.org/x/sync v0.25.0
 )
 
 require (
